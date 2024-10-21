@@ -1,0 +1,13 @@
+[
+    {
+        "id": 1,
+        "name": "John Doe",
+        "type": "john@example.com",
+        "command": [
+            {
+                "name": "Ddd",
+                "ir": "ddd"
+            }
+        ]
+    }
+]

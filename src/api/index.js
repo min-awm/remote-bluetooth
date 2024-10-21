@@ -1,5 +1,5 @@
 export default {
   // auth
-  LOGIN: "/auth/login",
+  DATA: "/data.json",
   REGISTER: "/auth/register",
 };
