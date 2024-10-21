@@ -1,12 +1,12 @@
 [
     {
         "id": 1,
-        "name": "John Doe",
-        "type": "john@example.com",
-        "command": [
+        "name": "Test",
+        "type": "Điều hòa",
+        "commands": [
             {
-                "name": "Ddd",
-                "ir": "ddd"
+                "name": "Bật điều hòa",
+                "ir": "e005002000"
             }
         ]
     }

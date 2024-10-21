@@ -1,5 +1,5 @@
 export default {
   // auth
   DATA: "/data.json",
-  REGISTER: "/auth/register",
+  UPDATE_DATA: "/update-data.php",
 };

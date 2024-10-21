@@ -1,5 +1,5 @@
 <template>
-  <div class="container max-w-4xl p-4 mx-auto">
+  <div class="container max-w-4xl p-4 mx-auto" v-if="!isDeviceDetail">
     <h1 class="mb-6 text-2xl font-bold text-center md:text-3xl">
       Ứng dụng điều khiển đa năng
     </h1>
@@ -8,24 +8,57 @@
       <div class="flex gap-4 pb-5">
         <button
           class="w-auto px-4 py-2 text-white transition duration-300 ease-in-out bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          v-if="!statusBLE"
+          @click="connectBLE()"
         >
           <Bluetooth class="inline-block w-4 h-4 mr-1" />
           Kết nối bluetooth
         </button>
+
+        <button
+          class="w-auto px-4 py-2 text-white transition duration-300 ease-in-out bg-green-500 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          v-else
+        >
+          <Bluetooth class="inline-block w-4 h-4 mr-1" />
+          Đã kết nối
+        </button>
       </div>
+
+      <h2 class="mb-4 text-xl font-semibold">Nhận mã IR</h2>
+      <div
+        class="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2"
+      >
+        <input
+          v-model="codeListenIR"
+          type="text"
+          placeholder="Mã IR"
+          class="flex-grow px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          readonly
+        />
+
+        <button
+          @click="listenIR()"
+          class="w-full px-4 py-2 text-white transition duration-300 ease-in-out bg-blue-500 rounded-md md:w-auto hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          <SatelliteDish class="inline-block w-4 h-4 mr-2" />
+          Lắng nghe
+        </button>
+      </div>
+      <div class="mt-2 mb-6 text-sm">Trạng thái: {{ litenIRStatus }}</div>
 
       <h2 class="mb-4 text-xl font-semibold">Gửi mã IR</h2>
       <div
         class="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2"
       >
         <input
+          v-model="codeSendIR"
           type="text"
           placeholder="Nhập mã"
           class="flex-grow px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <button
-          @click="addDevice"
+          @click="sendIR(codeSendIR)"
           class="w-full px-4 py-2 text-white transition duration-300 ease-in-out bg-blue-500 rounded-md md:w-auto hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <Send class="inline-block w-4 h-4 mr-2" />
@@ -37,6 +70,7 @@
     <div class="mb-3">
       <button
         class="w-auto px-4 py-2 text-white transition duration-300 ease-in-out bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        @click="isConfirmationCodeModalOpen = true"
       >
         <CloudUpload class="inline-block w-4 h-4 mr-1" />
         Đồng bộ dữ liệu
@@ -62,6 +96,12 @@
 
           <!-- 'DeviceDetail', params: { id: device.id } }" -->
           <div
+            @click="
+              () => {
+                deviceDetailID = device.id;
+                isDeviceDetail = true;
+              }
+            "
             class="flex-1 px-4 py-2 text-center text-white transition duration-300 ease-in-out bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Chi tiết
@@ -113,100 +153,46 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="container max-w-4xl p-4 mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <router-link
-        to="/"
-        class="px-4 py-2 text-gray-700 transition duration-300 ease-in-out bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-      >
-        Quay lại
-      </router-link>
-      <p>
-        <strong>Bluetooth:</strong>
-        {{ device.isOn ? "Đang bật" : "Đang tắt" }}
-      </p>
-    </div>
-
-    <div class="p-4 mb-6 bg-white rounded-lg shadow-md">
-      <h2 class="mb-4 text-xl font-semibold">Thông tin thiết bị</h2>
-      <p>
-        <strong>Loại:</strong>
-        {{ device.type }}
-      </p>
-    </div>
-
-    <div class="p-4 mb-6 bg-white rounded-lg shadow-md">
-      <h2 class="mb-4 text-xl font-semibold">Danh sách lệnh</h2>
-      <ul v-if="device.commands.length > 0" class="space-y-4">
-        <li
-          v-for="command in device.commands"
-          :key="command.id"
-          class="p-4 bg-gray-100 rounded-md"
-        >
-          <div class="flex items-center justify-between mb-2">
-            <span class="font-semibold">{{ command.name }}</span>
-            <button
-              @click="executeCommand(command.id)"
-              class="px-3 py-1 text-white transition duration-300 ease-in-out bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Thực hiện
-            </button>
-          </div>
-          <div class="text-sm text-gray-600">
-            <strong>Mã lệnh:</strong>
-            {{ command.code }}
-          </div>
-        </li>
-      </ul>
-      <p v-else class="text-gray-500">Chưa có lệnh nào được thêm vào.</p>
-    </div>
-
-    <!-- Float button -->
-    <button
-      @click="openModal"
-      class="fixed flex items-center justify-center text-white transition duration-300 ease-in-out bg-blue-500 rounded-full shadow-lg bottom-6 right-6 w-14 h-14 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-    >
-      <PlusCircle class="w-6 h-6" />
-    </button>
-
-    <!-- Modal -->
+    <!-- Modal config code -->
     <div
-      v-if="isModalOpen"
-      class="fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      v-if="isConfirmationCodeModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
     >
       <div class="w-full max-w-md p-6 bg-white rounded-lg">
-        <h2 class="mb-4 text-xl font-semibold">Thêm lệnh mới</h2>
+        <h2 class="mb-4 text-xl font-semibold">Nhập Mã Xác Nhận</h2>
         <input
-          v-model="newCommand.name"
-          type="text"
-          placeholder="Tên lệnh"
-          class="w-full px-3 py-2 mb-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          v-model="newCommand.code"
-          type="text"
-          placeholder="Mã lệnh"
+          v-model="confirmationCode"
+          type="password"
+          placeholder="Nhập mã xác nhận"
           class="w-full px-3 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <div class="flex justify-end space-x-2">
           <button
-            @click="closeModal"
+            @click="isConfirmationCodeModalOpen = false"
             class="px-4 py-2 text-gray-700 transition duration-300 ease-in-out bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
           >
             Hủy
           </button>
           <button
-            @click="addCommand"
+            @click="updateDeviceData()"
             class="px-4 py-2 text-white transition duration-300 ease-in-out bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            Thêm
+            Xác nhận
           </button>
         </div>
       </div>
     </div>
   </div>
+
+  <DeviceDetail
+    :devices="devices"
+    :id="deviceDetailID"
+    @updateCommand="updateCommandFn"
+    @runCommand="runCommanFn"
+    @close="isDeviceDetail = false"
+    v-else
+  />
 </template>
 
 <script setup>
@@ -217,9 +203,12 @@ import {
   Send,
   Bluetooth,
   CloudUpload,
+  SatelliteDish,
 } from "lucide-vue-next";
 import API from "@/api";
 import axios from "@/axios";
+import DeviceDetail from "@/components/home/DeviceDetail.vue";
+import { useToast } from "vue-toastification";
 
 const devices = ref([]);
 const newDevice = reactive({
@@ -227,6 +216,17 @@ const newDevice = reactive({
   type: "",
 });
 const isModalOpen = ref(false);
+const deviceDetailID = ref(null);
+const isDeviceDetail = ref(false);
+const isConfirmationCodeModalOpen = ref(false);
+const confirmationCode = ref("");
+const toast = useToast();
+let bleDevice;
+let characteristic;
+const statusBLE = ref(false);
+const codeListenIR = ref();
+const codeSendIR = ref();
+const litenIRStatus = ref("Tắt");
 
 const getDeviceLocal = () => {
   const deviceData = localStorage.getItem("deviceData");
@@ -245,7 +245,7 @@ const addDevice = () => {
       id: Date.now(),
       name: newDevice.name,
       type: newDevice.type,
-      command: [],
+      commands: [],
     };
 
     const deviceLocal = getDeviceLocal();
@@ -282,10 +282,116 @@ const getDeviceData = async () => {
     const res = await axios.get(API.DATA);
     const data = res.data;
 
-    devices.value = data.concat(getDeviceLocal());
+    const idsDeviceLocal = getDeviceLocal().map((item) => item.id); // Lấy id ở local
+    const devicesData = data.filter(
+      (item) => !idsDeviceLocal.includes(item.id)
+    ); // Loại các item giống id với local
+
+    devices.value = devicesData.concat(getDeviceLocal()); // Hợp nhất mảng
   } catch (error) {
     console.log(error);
   }
+};
+
+const updateDeviceData = async () => {
+  try {
+    isConfirmationCodeModalOpen.value = false;
+    const res = await axios.post(API.UPDATE_DATA, {
+      value: devices.value,
+      code: confirmationCode.value,
+    });
+    const data = res.data;
+
+    if (data.status === "success") {
+      toast.success(data.message);
+    }
+
+    if (data.status === "error") {
+      toast.error(data.message);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateCommandFn = (data) => {
+  const index = devices.value.findIndex(
+    (item) => item.id === deviceDetailID.value
+  );
+  if (index !== -1) {
+    devices.value[index].commands = data;
+    localStorage.setItem("deviceData", JSON.stringify(devices.value));
+  }
+};
+
+const connectBLE = async () => {
+  try {
+    if (statusBLE.value) return;
+
+    const serviceUuid = "12345678-1234-1234-1234-123456789abc"; // UUID của dịch vụ trên ESP32
+    const characteristicUuid = "abcd1234-1234-1234-1234-123456789abc"; // UUID của characteristic trên ESP32
+
+    // Yêu cầu kết nối với thiết bị BLE
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: "MIN" }], // Thay đổi cho phù hợp với tên thiết bị BLE
+      optionalServices: [serviceUuid],
+    });
+
+    const server = await bleDevice.gatt.connect();
+    const service = await server.getPrimaryService(serviceUuid);
+    characteristic = await service.getCharacteristic(characteristicUuid);
+
+    statusBLE.value = true;
+  } catch (error) {
+    console.error("Connection failed: ", error);
+    toast.error("Lỗi kết nối");
+  }
+};
+
+const listenIR = async () => {
+  try {
+    codeListenIR.value = null;
+    const encoder = new TextEncoder();
+    const data = encoder.encode("listenIR");
+    await characteristic.writeValue(data);
+    litenIRStatus.value = "Đang lắng nghe";
+
+    const intervalID = setInterval(async () => {
+      try {
+        const value = await characteristic.readValue();
+        const data = new TextDecoder().decode(value);
+
+        if (data == "listenIR") {
+          litenIRStatus.value = "Đang lắng nghe";
+        } else {
+          codeListenIR.value = data;
+          litenIRStatus.value = "Tắt";
+          clearInterval(intervalID);
+        }
+      } catch (error) {
+        console.log("Error listen IR: ", error);
+      }
+    }, 1000);
+  } catch (error) {
+    console.error("Failed to listen data: ", error);
+    toast.error("Lỗi lắng nghe");
+  }
+};
+
+const sendIR = async (d) => {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(d);
+    await characteristic.writeValue(data);
+    toast.success("Đã gửi IR");
+  } catch (error) {
+    console.error("Failed to send data: ", error);
+    toast.error("Lỗi gửi IR");
+  }
+};
+
+const runCommanFn = (data) => {
+  sendIR(data);
 };
 
 getDeviceData();

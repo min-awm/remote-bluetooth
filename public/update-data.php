@@ -14,30 +14,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Bước 2: Giải mã JSON thành mảng PHP
     $data = json_decode($json_data, true);
 
+    if ($data["code"] != "min") {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Không đúng mã xác thực'
+        ]);
+        return;
+    }
+
     // Kiểm tra xem dữ liệu có hợp lệ không
     if (is_array($data)) {
         // Bước 3: Mã hóa dữ liệu mới thành JSON
-        $new_json_data = json_encode($data, JSON_PRETTY_PRINT);
+        $new_json_data = json_encode($data["value"], JSON_PRETTY_PRINT);
 
         // Bước 4: Ghi đè dữ liệu mới vào file data.json
         if (file_put_contents($file_path, $new_json_data)) {
             // Trả về phản hồi thành công
             echo json_encode([
                 'status' => 'success',
-                'message' => 'Data has been replaced successfully'
+                'message' => 'Cập nhập thành công'
             ]);
         } else {
             // Trả về phản hồi lỗi khi ghi dữ liệu thất bại
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Failed to save data'
+                'message' => 'Lưu dữ liệu lỗi'
             ]);
         }
     } else {
         // Trả về phản hồi lỗi khi dữ liệu không hợp lệ
         echo json_encode([
             'status' => 'error',
-            'message' => 'Invalid JSON data'
+            'message' => 'Dữ liệu không hợp lệ'
         ]);
     }
 } else {

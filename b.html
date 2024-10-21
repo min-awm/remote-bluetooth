@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 BLE Web Client</title>
+</head>
+<body>
+  <h1>ESP32 BLE Web Client</h1>
+  <button id="connectBtn">Connect to ESP32</button>
+  <p id="status">Status: Disconnected</p>
+  <p id="data">Received Data: </p>
+
+  <input type="text" id="inputData" placeholder="Enter data to send" />
+  <button id="sendBtn">Send Data</button>
+  
+  <script>
+    let bleDevice;
+    let characteristic;
+
+    document.getElementById('connectBtn').addEventListener('click', async () => {
+      try {
+        const serviceUuid = '12345678-1234-1234-1234-123456789abc'; // UUID của dịch vụ trên ESP32
+        const characteristicUuid = 'abcd1234-1234-1234-1234-123456789abc'; // UUID của characteristic trên ESP32
+
+        // Yêu cầu kết nối với thiết bị BLE
+        bleDevice = await navigator.bluetooth.requestDevice({
+            filters: [{ namePrefix: "MIN" }], // Thay đổi cho phù hợp với tên thiết bị BLE
+            optionalServices: [serviceUuid]
+        });
+
+        
+        
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(serviceUuid);
+        characteristic = await service.getCharacteristic(characteristicUuid);
+
+        // // Đọc giá trị ban đầu từ ESP32
+        const value = await characteristic.readValue();
+        document.getElementById('status').textContent = 'Status: Connected';
+        document.getElementById('data').textContent = 'Received Data: ' + new TextDecoder().decode(value);
+        
+
+      } catch (error) {
+        console.error('Connection failed', error);
+        alert('Failed to connect: ' + error);
+      }
+    });
+    
+    setInterval(async () => {
+        try {
+              const value = await characteristic.readValue();
+            document.getElementById('status').textContent = 'Status: Connected';
+            document.getElementById('data').textContent = 'Received Data: ' + new TextDecoder().decode(value);
+          } catch (error) {
+          }
+         
+        
+    }, 1000);
+    
+    // Gửi dữ liệu đến ESP32
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      const inputData = document.getElementById('inputData').value;
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(inputData);
+        await characteristic.writeValue(data);
+        alert("Data sent successfully");
+        console.log('Data sent: ', inputData);
+      } catch (error) {
+        console.error('Failed to send data: ', error);
+        alert('Failed to send data: ' + error);
+      }
+    });
+  </script>
+</body>
+</html>
