@@ -1,7 +1,15 @@
-# Vue 3 + Vite
+# Remote using ESP32
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Receive pin: 4
+Sending pin: 18
 
-## Recommended IDE Setup
+Result: Weak infrared signal (possibly due to 3.3V power supply), device needs to be held close for it to work
 
-- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (previously Volar) and disable Vetur
+# Điều khiển bằng esp32
+
+Chân nghe 4
+Chân gưi 18
+
+Kết quả: Tín hiệu hồng ngoại yếu (có thể do nguồn 3v3), phải để sát vào thiết bị
+
+![Image](https://github.com/min-awm/remote-bluetooth/raw/main/images/a.jpg)

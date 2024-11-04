@@ -11,7 +11,7 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
 
-const int IR_SEND_PIN = 5;     // Chân GPIO phát tín hiệu IR (LED IR)
+const int IR_SEND_PIN = 18;     // Chân GPIO phát tín hiệu IR (LED IR)
 const int IR_RECEIVE_PIN = 4;  // Chân GPIO nhận tín hiệu IR (cảm biến IR 1838)
 bool listeningIR = false;
 
